@@ -1,6 +1,21 @@
 package ru.dreremin.avl.tree.map;
 
+import java.util.Comparator;
+
 public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
+
+    private Node<K, V> root;
+    private Comparator<K> comparator;
+
+    public AvlTreeMap() {
+        root = null;
+        comparator = null;
+    }
+
+    public AvlTreeMap(Comparator<K> comparator) {
+        root = null;
+        this.comparator = comparator;
+    }
 
     private static class Entry<K, V> {
         private K key;
@@ -41,11 +56,36 @@ public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
         private void setRightSon(Node<K, V> node) { rightSon = node; }
     }
 
-    @Override
-    public boolean containsKey(K key) { return true; }
+    private <U extends Comparable<? super K>> Node<K, V>
+            searchNodeWithComparable(Node<K, V> node, U key) {
+        if (node == null) { return null; }
+        if (key.compareTo(node.entry.key) > 0) {
+            return searchNodeWithComparable(node.rightSon, key);
+        }
+        if (key.compareTo(node.entry.key) < 0) {
+            return searchNodeWithComparable(node.leftSon, key);
+        }
+        return node;
+    }
+
+    private Node<K, V> searchNodeWithComparator(Node<K, V> node, K key) {
+        if (node == null) { return null; }
+        if (comparator.compare(key, node.entry.key) > 0) {
+            return searchNodeWithComparator(node.rightSon, key);
+        }
+        if (comparator.compare(key, node.entry.key) < 0) {
+            return searchNodeWithComparator(node.leftSon, key);
+        }
+        return node;
+    }
 
     @Override
-    public boolean isEmpty() { return true; }
+    public boolean containsKey(K key) {
+        return true;
+    }
+
+    @Override
+    public boolean isEmpty() { return root == null; }
 
     @Override
     public boolean insert(K key, V value) { return true; }
