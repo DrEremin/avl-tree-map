@@ -19,6 +19,26 @@ public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
         Entry<K, V> entry;
         Node<K, V> leftSon;
         Node<K, V> rightSon;
+
+        private Node(Entry<K, V> entry) {
+            this.entry = entry;
+            this.leftSon = null;
+            this.rightSon = null;
+        }
+
+        private Node(Entry<K, V> entry,
+                     Node<K, V> leftSon,
+                     Node<K, V> rightSon) {
+            this.entry = entry;
+            this.leftSon = leftSon;
+            this.rightSon = rightSon;
+        }
+
+        private Entry<K, V> getEntry() { return entry; }
+        private Node<K, V> getLeftSon() { return leftSon; }
+        private Node<K, V> getRightSon() { return rightSon; }
+        private void setLeftSon(Node<K, V> node) { leftSon = node; }
+        private void setRightSon(Node<K, V> node) { rightSon = node; }
     }
 
     @Override
