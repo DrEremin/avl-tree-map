@@ -5,21 +5,21 @@ import java.util.Comparator;
 public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
 
     private Node<K, V> root;
-    private final Comparator<K> comparator;
+    private final Comparator<? super K> comparator;
 
     public AvlTreeMap() {
         root = null;
         comparator = null;
     }
 
-    public AvlTreeMap(Comparator<K> comparator) {
+    public AvlTreeMap(Comparator<? super K> comparator) {
         root = null;
         this.comparator = comparator;
     }
 
     private static class Entry<K, V> {
-        private final K key;
-        private final V value;
+        private K key;
+        private V value;
 
         private Entry(K key, V value) {
             if (key == null) {
@@ -54,23 +54,24 @@ public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
     }
 
     private Node<K, V> searchNodeWithComparable(Node<K, V> node, K key) {
-        if (node == null) { return null; }
+
         Comparable<? super K> comparable = (Comparable<? super K>) key;
-        if (comparable.compareTo(node.entry.key) > 0) {
+
+        if (comparable.compareTo(node.entry.key) > 0 && node.rightSon != null) {
             return searchNodeWithComparable(node.rightSon, key);
         }
-        if (comparable.compareTo(node.entry.key) < 0) {
+        if (comparable.compareTo(node.entry.key) < 0 && node.rightSon != null) {
             return searchNodeWithComparable(node.leftSon, key);
         }
         return node;
     }
 
     private Node<K, V> searchNodeWithComparator(Node<K, V> node, K key) {
-        if (node == null) { return null; }
-        if (comparator.compare(key, node.entry.key) > 0) {
+        if (comparator.compare(key, node.entry.key) > 0
+                && node.rightSon != null) {
             return searchNodeWithComparator(node.rightSon, key);
-        }
-        if (comparator.compare(key, node.entry.key) < 0) {
+        } else if (comparator.compare(key, node.entry.key) < 0
+                && node.leftSon != null) {
             return searchNodeWithComparator(node.leftSon, key);
         }
         return node;
@@ -82,21 +83,57 @@ public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
         }
     }
 
+    private void insertWithComparable(K key, V value) {
+
+        Comparable<? super K> comparable = (Comparable<? super K>) key;
+        Node<K, V> targetNode = searchNodeWithComparable(root, key);
+
+        if (comparable.compareTo(targetNode.entry.key) == 0) {
+            targetNode.entry = new Entry<>(key, value);
+        } else if (comparable.compareTo(targetNode.entry.key) > 0) {
+            targetNode.rightSon = new Node<>(new Entry<>(key, value));
+        } else {
+            targetNode.leftSon = new Node<>(new Entry<>(key, value));
+        }
+    }
+
+    private void insertWithComparator(K key, V value) {
+
+        Node<K, V> targetNode = searchNodeWithComparator(root, key);
+
+        if (comparator.compare(key, targetNode.entry.key) == 0) {
+            targetNode.entry = new Entry<>(key, value);
+        } else if (comparator.compare(key, targetNode.entry.key) > 0) {
+            targetNode.rightSon = new Node<>(new Entry<>(key, value));
+        } else {
+            targetNode.leftSon = new Node<>(new Entry<>(key, value));
+        }
+    }
+
     @Override
     public boolean containsKey(K key) {
         checkingForComparability(key);
         if (root == null) { return false; }
-        Node<K, V> node = (comparator != null)
-                ? searchNodeWithComparator(root, key)
-                : searchNodeWithComparable(root, key);
-        return node != null;
+        if (comparator != null) {
+            return comparator.compare(key,
+                    searchNodeWithComparator(root, key).entry.key) == 0;
+        } else {
+            return ((Comparable<? super K>) key).compareTo(
+                    searchNodeWithComparable(root, key).entry.key) == 0;
+        }
     }
 
     @Override
     public boolean isEmpty() { return root == null; }
 
     @Override
-    public boolean insert(K key, V value) { return true; }
+    public boolean put(K key, V value) {
+        checkingForComparability(key);
+        if (root == null) { return false; }
+        if (comparator != null) { insertWithComparator(key, value); }
+        else { insertWithComparable(key, value); }
+        return true;
+    }
 
     @Override
     public V remove(K key) { return null; }
