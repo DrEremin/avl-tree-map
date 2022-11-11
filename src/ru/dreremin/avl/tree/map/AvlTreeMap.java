@@ -1,25 +1,26 @@
 package ru.dreremin.avl.tree.map;
 
 import java.util.Comparator;
+import java.util.function.BiConsumer;
 
 public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
 
     private Node<K, V> root;
-    private final Comparator<? super K> comparator;
+    private final Comparator<K> comparator;
 
     public AvlTreeMap() {
         root = null;
         comparator = null;
     }
 
-    public AvlTreeMap(Comparator<? super K> comparator) {
+    public AvlTreeMap(Comparator<K> comparator) {
         root = null;
         this.comparator = comparator;
     }
 
     private static class Entry<K, V> {
-        private K key;
-        private V value;
+        private final K key;
+        private final V value;
 
         private Entry(K key, V value) {
             if (key == null) {
@@ -28,6 +29,8 @@ public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
             this.key = key;
             this.value = value;
         }
+
+        /*public K getKey() { return key; }*/
     }
 
     private static class Node<K, V> {
@@ -51,16 +54,29 @@ public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
             this.leftSon = leftSon;
             this.rightSon = rightSon;
         }
+
+        /*public Node<K, V> getLeftSon() { return leftSon; }
+        public Entry<K, V> getEntry() { return entry; }*/
+
+        @Override
+        public String toString() {
+            return new StringBuilder("{")
+                    .append(entry.key)
+                    .append(" - ")
+                    .append(entry.value)
+                    .append("}")
+                    .toString();
+        }
     }
 
     private Node<K, V> searchNodeWithComparable(Node<K, V> node, K key) {
 
-        Comparable<? super K> comparable = (Comparable<? super K>) key;
+        Comparable<K> comparable = (Comparable<K>) key;
 
         if (comparable.compareTo(node.entry.key) > 0 && node.rightSon != null) {
             return searchNodeWithComparable(node.rightSon, key);
         }
-        if (comparable.compareTo(node.entry.key) < 0 && node.rightSon != null) {
+        if (comparable.compareTo(node.entry.key) < 0 && node.leftSon != null) {
             return searchNodeWithComparable(node.leftSon, key);
         }
         return node;
@@ -77,15 +93,9 @@ public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
         return node;
     }
 
-    private void checkingForComparability(K key) {
-        if (comparator == null && !(key instanceof Comparable)) {
-            throw new ClassCastException("Key type does not allow comparison");
-        }
-    }
-
     private void insertWithComparable(K key, V value) {
 
-        Comparable<? super K> comparable = (Comparable<? super K>) key;
+        Comparable<K> comparable = (Comparable<K>) key;
         Node<K, V> targetNode = searchNodeWithComparable(root, key);
 
         if (comparable.compareTo(targetNode.entry.key) == 0) {
@@ -110,6 +120,21 @@ public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
         }
     }
 
+    private <T> void inorderTraversal(Node<K, V> node,
+                                      BiConsumer<Node<K, V>, T> combiner,
+                                      T accumulator) {
+        if (node == null) { return; }
+        inorderTraversal(node.leftSon, combiner, accumulator);
+        combiner.accept(node, accumulator);
+        inorderTraversal(node.rightSon, combiner, accumulator);
+    }
+
+    private void checkingForComparability(K key) {
+        if (comparator == null && !(key instanceof Comparable)) {
+            throw new ClassCastException("Key type does not allow comparison");
+        }
+    }
+
     @Override
     public boolean containsKey(K key) {
         checkingForComparability(key);
@@ -118,7 +143,7 @@ public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
             return comparator.compare(key,
                     searchNodeWithComparator(root, key).entry.key) == 0;
         } else {
-            return ((Comparable<? super K>) key).compareTo(
+            return ((Comparable<K>) key).compareTo(
                     searchNodeWithComparable(root, key).entry.key) == 0;
         }
     }
@@ -127,17 +152,41 @@ public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
     public boolean isEmpty() { return root == null; }
 
     @Override
-    public boolean put(K key, V value) {
+    public void put(K key, V value) {
         checkingForComparability(key);
-        if (root == null) { return false; }
+        if (root == null) {
+            root = new Node<>(new Entry<>(key, value));
+            return;
+        }
         if (comparator != null) { insertWithComparator(key, value); }
         else { insertWithComparable(key, value); }
-        return true;
     }
 
     @Override
-    public V remove(K key) { return null; }
+    public V remove(K key) {
+        checkingForComparability(key);
+        if (root == null) { return null; }
+
+
+        return null;
+    }
 
     @Override
     public V get(K key) { return null; }
+
+    @Override
+    public String toString() {
+
+        StringBuilder builder = new StringBuilder("[");
+
+        inorderTraversal(
+                root,
+                (Node<K, V> n, StringBuilder b) -> b
+                        .append(n.toString())
+                        .append(", "),
+                builder);
+        return builder
+                .replace(builder.length() - 2, builder.length(), "]")
+                .toString();
+    }
 }
