@@ -172,7 +172,25 @@ public class AvlTreeMap<K, V> implements BinarySearchTree<K, V> {
     }
 
     @Override
-    public V get(K key) { return null; }
+    public V get(K key) {
+        checkingForComparability(key);
+        if (root == null) { return null; }
+
+        Node<K, V> node;
+
+        if (comparator != null) {
+            node = searchNodeWithComparator(root, key);
+            if (comparator.compare(key, node.entry.key) == 0) {
+                return node.entry.value;
+            }
+        } else {
+            node = searchNodeWithComparable(root, key);
+            if (((Comparable<K>) key).compareTo(node.entry.key) == 0) {
+                return node.entry.value;
+            }
+        }
+        return null;
+    }
 
     @Override
     public String toString() {
